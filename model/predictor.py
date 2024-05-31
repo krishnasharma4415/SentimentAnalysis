@@ -1,40 +1,62 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import joblib
-import re
-import string
+from bs4 import BeautifulSoup
+import nltk
 from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.ensemble import RandomForestClassifier
+import os
 
 app = Flask(__name__)
+CORS(app)
 
-model = joblib.load('model.pkl')
+MODEL_PATH = os.path.join(os.path.dirname(__file__), 'random_forest_model.pkl')
+VECTORIZER_PATH = os.path.join(os.path.dirname(__file__), 'count_vectorizer.pkl')
 
-def preprocess_text(text):
-    text = text.lower()
-    text = re.sub('<.*?>', '', text)
-    text = re.sub(r'https?://\S+|www\.\S+', '', text)
-    text = text.translate(str.maketrans('', '', string.punctuation))
-    stop_words = set(stopwords.words('english'))
-    text = ' '.join(word for word in text.split() if word not in stop_words)
-    return text
+model = joblib.load(MODEL_PATH)
+vectorizer = joblib.load(VECTORIZER_PATH)
 
-@app.route('/predict', methods=['POST'])
+stop_words = set(stopwords.words('english'))
+
+def remove_html(text):
+    return BeautifulSoup(text, "html.parser").get_text()
+
+def remove_stopwords(text):
+    return ' '.join(word for word in text.split() if word not in stop_words)
+
+@app.route('/', methods=['POST'])
 def predict():
-    # Get input data from request
-    data = request.get_json()
-    review = data['review']
+    try:
+        data = request.json
+        review = data.get('review', '')
 
-    preprocessed_review = preprocess_text(review)
+        if not review:
+            return jsonify({'error': 'No review provided'}), 400
 
-    cv = CountVectorizer()
-    preprocessed_review_vectorized = cv.transform([preprocessed_review])
+        review = review.lower()
+        review = remove_html(review)
+        review = remove_stopwords(review)
 
-    prediction = model.predict(preprocessed_review_vectorized)
+        review_vectorized = vectorizer.transform([review]).toarray()
 
-    decoded_prediction = 'positive' if prediction[0] == 1 else 'negative'
+        prediction = model.predict(review_vectorized)
+        sentiment = 'positive' if prediction[0] == 1 else 'negative'
 
-    return jsonify({'sentiment': decoded_prediction})
+        return jsonify({'sentiment': sentiment})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True)
+app.run(debug=True)
+
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
+
+# from flask import Flask
+
+# app = Flask(__name__)
+
+# @app.route("/")
+# def hello():
+#     return( "Hello World" )
+    
+# app.run()

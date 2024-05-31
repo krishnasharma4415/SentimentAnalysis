@@ -1,30 +1,35 @@
-import React, { useState } from 'react';  
-import './App.css';
+import React, { useState } from 'react';
 
 function App() {
-  const [count, setCount] = useState(0);
   const [reviewText, setReviewText] = useState('');
-  const [prediction, setPrediction] = useState('');
+  const [prediction, setPrediction] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleReviewSubmit = async () => {
-    // Make API call to Flask backend
+    setPrediction(null);
+    setError(null);
+    setIsLoading(true);
+
     try {
-      const response = await fetch('http://localhost:5000/predict', {
+      const response = await fetch('http://localhost:5000/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ review: reviewText })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setPrediction(data.sentiment);
       } else {
-        console.error('Error:', response.statusText);
+        setError('Error: ' + response.statusText);
       }
     } catch (error) {
-      console.error('Error:', error);
+      setError('Error: ' + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -36,8 +41,11 @@ function App() {
           onChange={(e) => setReviewText(e.target.value)}
           placeholder="Enter review text..."
         />
-        <button onClick={handleReviewSubmit}>Predict Sentiment</button>
-        <p>Sentiment Prediction: {prediction}</p>
+        <button onClick={handleReviewSubmit} disabled={isLoading}>
+          {isLoading ? 'Predicting...' : 'Predict Sentiment'}
+        </button>
+        {prediction && <p>Sentiment Prediction: {prediction}</p>}
+        {error && <p style={{ color: 'red' }}>{error}</p>}
       </div>
     </>
   );
