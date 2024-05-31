@@ -23,9 +23,10 @@ def remove_html(text):
 def remove_stopwords(text):
     return ' '.join(word for word in text.split() if word not in stop_words)
 
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['POST','GET'])
 def predict():
     try:
+        
         data = request.json
         review = data.get('review', '')
 
@@ -43,20 +44,7 @@ def predict():
 
         return jsonify({'sentiment': sentiment})
     except Exception as e:
+        print(e)
         return jsonify({'error': str(e)}), 500
 
-app.run(debug=True)
-
-
-# if __name__ == '__main__':
-#     app.run(debug=True)
-
-# from flask import Flask
-
-# app = Flask(__name__)
-
-# @app.route("/")
-# def hello():
-#     return( "Hello World" )
-    
-# app.run()
+app.run(debug=True) 
