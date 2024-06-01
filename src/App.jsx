@@ -34,20 +34,18 @@ function App() {
   };
 
   return (
-    <>
-      <div className="card">
-        <textarea
-          value={reviewText}
-          onChange={(e) => setReviewText(e.target.value)}
-          placeholder="Enter review text..."
-        />
-        <button onClick={handleReviewSubmit} disabled={isLoading}>
-          {isLoading ? 'Predicting...' : 'Predict Sentiment'}
-        </button>
-        {prediction && <p>Sentiment Prediction: {prediction}</p>}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      </div>
-    </>
+    <div className="card">
+      <textarea
+        value={reviewText}
+        onChange={(e) => setReviewText(e.target.value)}
+        placeholder="Enter review text..."
+      />
+      <button onClick={handleReviewSubmit} disabled={isLoading}>
+        {isLoading ? 'Predicting...' : 'Predict Sentiment'}
+      </button>
+      {prediction && <p>Sentiment Prediction: {prediction}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+    </div>
   );
 }
 
